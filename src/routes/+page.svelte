@@ -24,7 +24,7 @@
 
 	let bingoNumbers: number[][] = [];
 
-	onMount(() => {
+	const handleBingoNumbers = () => {
 		while (nonDrawable) {
 			bingoNumbers = splittedNumbers.map((s, j) => {
 				const splitter = (j % 2) + 1;
@@ -65,9 +65,16 @@
 			});
 
 			nonDrawable = !bingoChecker(bingoNumbers);
-
-			console.log(nonDrawable);
 		}
+	};
+
+	const redraw = () => {
+		nonDrawable = true
+		handleBingoNumbers()
+	}
+
+	onMount(() => {
+		handleBingoNumbers()
 	});
 </script>
 
@@ -88,6 +95,8 @@
 		</main>
 	</div>
 {/if}
+
+<button on:click={redraw}>kart cek</button>
 
 <style>
 	.card {
