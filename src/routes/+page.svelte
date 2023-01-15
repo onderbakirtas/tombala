@@ -102,7 +102,7 @@
 	.card {
 		display: inline-flex;
 		flex-direction: column;
-		border: 0.5rem solid tomato;
+		border: 1rem solid tomato;
 		border-radius: 0.5rem;
 	}
 
@@ -114,7 +114,7 @@
 		color: white;
 		line-height: 1;
 		height: 3rem;
-		padding: 0 1rem 0.5rem;
+		padding-bottom: 1rem;
 	}
 
 	.card-number {
@@ -129,25 +129,27 @@
 
 	.card-main {
 		display: flex;
-		border: 1px solid white;
+		gap: 0.5rem;
+		background-color: tomato;
 	}
 
 	.column {
 		display: flex;
 		flex-direction: column;
+		gap: 0.5rem;
 	}
 
 	.box {
+		border-radius: 4px;
 		width: 4rem;
-		height: 4rem;
+		height: 3rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		text-align: center;
-		font-size: 2rem;
+		font-size: 1.5rem;
 		font-weight: 700;
-		margin: 0.125rem;
-		background-color: tomato;
+		background-color: rgb(173, 68, 50);
 	}
 
 	.box.filled {
