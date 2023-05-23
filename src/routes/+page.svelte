@@ -2,6 +2,32 @@
 	import { bingoChecker, shuffleArray } from '$lib/utils';
 	import { onMount } from 'svelte';
 
+	let currentNumber = 0;
+
+	let gameStarted = false;
+
+	let gameFinished = false;
+
+	let remainingDraws = 90;
+
+	const gameNumbers = Array.from(Array(90).keys(), (e) => e + 1);
+
+	let electedNumbers: number[] = [];
+
+	function selectRandom(): number {
+		if (gameNumbers.length === 0) {
+			gameFinished = true;
+			return -1;
+		}
+		let index = Math.floor(Math.random() * gameNumbers.length);
+		let number = gameNumbers[index];
+		electedNumbers.push(number);
+		electedNumbers = [...electedNumbers]
+		gameNumbers.splice(index, 1);
+
+		return number;
+	}
+
 	let nonDrawable = true;
 
 	let splittedNumbers: number[][] = [];
@@ -23,6 +49,8 @@
 	});
 
 	let bingoNumbers: number[][] = [];
+
+	let finalNumbers: number[] = [];
 
 	const handleBingoNumbers = () => {
 		while (nonDrawable) {
@@ -64,45 +92,98 @@
 				return item;
 			});
 
+			finalNumbers = bingoNumbers.flat();
+
 			nonDrawable = !bingoChecker(bingoNumbers);
 		}
 	};
 
 	const redraw = () => {
-		nonDrawable = true
-		handleBingoNumbers()
+		nonDrawable = true;
+		handleBingoNumbers();
+	};
+
+	function startGame() {
+		const interval = setInterval(() => {
+			remainingDraws -= 1;
+
+			if (remainingDraws === 0) {
+				clearInterval(interval);
+				gameFinished = true;
+				return;
+			}
+
+			currentNumber = selectRandom();
+		}, 1000);
+		gameStarted = true;
 	}
 
 	onMount(() => {
-		handleBingoNumbers()
+		handleBingoNumbers();
 	});
 </script>
 
-{#if !nonDrawable}
-	<div class="card">
-		<header class="card-header">
-			<div>Tombala</div>
-			<div class="card-number">1</div>
-		</header>
-		<main class="card-main">
-			{#each bingoNumbers as column}
-				<div class="column">
-					{#each column as item}
-						<div class="box" class:filled={item}>{item || ''}</div>
-					{/each}
-				</div>
-			{/each}
-		</main>
-	</div>
-{/if}
+<main class="app">
+	<h1>Tombala</h1>
 
-<button on:click={redraw}>kart cek</button>
+	<button on:click={redraw} disabled={gameStarted}>kart cek</button>
+
+	{#if !nonDrawable}
+		<div class="card">
+			<header class="card-header">
+				<div>Tombala</div>
+				<div class="card-number">1</div>
+			</header>
+			<main class="final-numbers">
+				{#each finalNumbers as item}
+					<div
+						class="box"
+						class:filled={item > 0}
+						class:bingo={electedNumbers.includes(item)}
+					>
+						{item || ''}
+					</div>
+				{/each}
+			</main>
+		</div>
+	{/if}
+
+	{#if !gameStarted}
+		<button on:click={startGame}>oyunu baslat</button>
+	{:else}
+		<div>
+			<span>{currentNumber}</span>
+			<span>{remainingDraws}</span>
+		</div>
+	{/if}
+
+	{#if gameFinished}
+		<div>oyun bitti</div>
+	{/if}
+</main>
 
 <style>
+	.final-numbers {
+		display: grid;
+		grid-template-columns: repeat(9, 1fr);
+		grid-template-rows: repeat(3, 1fr);
+		grid-auto-flow: column;
+		gap: 0.5rem;
+	}
+
+	.app {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+	}
+
 	.card {
 		display: inline-flex;
 		flex-direction: column;
 		border: 1rem solid tomato;
+		background-color: tomato;
 		border-radius: 0.5rem;
 	}
 
@@ -127,18 +208,6 @@
 		border-radius: 50%;
 	}
 
-	.card-main {
-		display: flex;
-		gap: 0.5rem;
-		background-color: tomato;
-	}
-
-	.column {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
 	.box {
 		border-radius: 4px;
 		width: 4rem;
@@ -154,5 +223,10 @@
 
 	.box.filled {
 		background-color: white;
+	}
+
+	.box.bingo {
+		background-color: green;
+		color: white;
 	}
 </style>
