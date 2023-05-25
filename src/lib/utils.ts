@@ -1,3 +1,5 @@
+import { CARD_COLORS } from "./constants";
+
 export const shuffleArray = (array: number[]) => {
 	for (let i = array.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
@@ -13,3 +15,8 @@ export const bingoChecker = (bingo: number[][]) => {
 
 	return row1Length === 5 && row2Length === 5;
 };
+
+export const randomCardColor = () => {
+	const index = Math.floor(Math.random() * CARD_COLORS.length);
+	return CARD_COLORS[index];
+}
