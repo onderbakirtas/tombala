@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import { gameOutcome, modalVisible } from '$lib/store';
 	import type { TGameSession } from '$lib/types';
 	import { io } from 'socket.io-client';
 
@@ -10,6 +12,8 @@
 	let currentNumber: number;
 
 	let gameCounter = 0;
+
+	let gameCompleted = false;
 
 	let electedNumbers: number[] = [];
 
@@ -32,25 +36,44 @@
 		gameStatus = 'idle';
 		gameCounter = 0;
 		electedNumbers = [];
+		gameCompleted = false;
+		$gameOutcome = 'unknown';
+	});
+
+	socket.on('game:finished', () => {
+		gameCompleted = true;
+		endGame();
 	});
 
 	function startGame() {
 		socket.emit('game:start');
 	}
 
-	function finishGame() {
+	function endGame() {
 		socket.emit('game:end');
 	}
 
 	function restartGame() {
 		socket.emit('game:restart');
 	}
+
+	function finishGame() {
+		socket.emit('game:finish');
+	}
+
+	$: {
+		if ($gameOutcome === 'win') {
+			finishGame();
+		}
+
+		if (gameCompleted === true) {
+			$modalVisible = true;
+		}
+	}
 </script>
 
 <main class="app">
 	<h1>Tombala</h1>
-
-	<h2>{gameCounter}</h2>
 
 	<Card {electedNumbers} />
 
@@ -59,7 +82,7 @@
 	{/if}
 
 	{#if gameStatus === 'playing'}
-		<button on:click={finishGame}>oyunu bitir</button>
+		<button on:click={endGame}>oyunu bitir</button>
 		{#if currentNumber}
 			<h1>{currentNumber}</h1>
 		{/if}
@@ -76,6 +99,17 @@
 		</div>
 	{/if}
 </main>
+
+{#if gameCompleted && $modalVisible}
+	<Modal>
+		{#if $gameOutcome === 'win'}
+			<p>Tebrikler, kazandınız.</p>
+		{/if}
+		{#if $gameOutcome === 'lose'}
+			<p>Maalesef, kaybettiniz.</p>
+		{/if}
+	</Modal>
+{/if}
 
 <style>
 	.app {

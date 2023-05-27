@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { gameOutcome } from '$lib/store';
 	import { bingoChecker, randomCardColor, shuffleArray } from '$lib/utils';
 	import { onMount } from 'svelte';
 
@@ -18,6 +19,8 @@
 	let finalNumbers: number[] = [];
 
 	let cardColor = '#ffbe0b';
+
+	let optimalNumbers: number[] = [];
 
 	splittedNumbers = splittedNumbers.map((_, i) => {
 		_ = Array.from(Array(10).keys(), (e) => e + i * 10);
@@ -71,9 +74,21 @@
 
 			finalNumbers = bingoNumbers.flat();
 
+			optimalNumbers = [...new Set(finalNumbers)];
+
 			nonDrawable = !bingoChecker(bingoNumbers);
 		}
 	};
+
+	$: {
+		let result = optimalNumbers.filter((e) => electedNumbers.includes(e)).length === 2;
+
+		if (result) {
+			gameOutcome.set('win');
+		} else {
+			gameOutcome.set('lose');
+		}
+	}
 
 	onMount(() => {
 		handleBingoNumbers();
@@ -82,6 +97,8 @@
 </script>
 
 {#if !nonDrawable}
+	<p>{JSON.stringify($gameOutcome)}</p>
+
 	<div class="card" style:--card-bg={cardColor}>
 		<header class="card-header">
 			<div>Tombala</div>
@@ -174,7 +191,7 @@
 			width: 1.5rem;
 			font-size: 0.75rem;
 		}
-		
+
 		.card-numbers {
 			gap: 0.25rem;
 		}
