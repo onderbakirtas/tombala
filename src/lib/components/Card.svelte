@@ -104,6 +104,8 @@
 		border: 1rem solid var(--card-bg);
 		background-color: var(--card-bg);
 		border-radius: 0.5rem;
+		max-width: 40rem;
+		width: 100%;
 	}
 
 	.card-header {
@@ -154,5 +156,33 @@
 	.box.bingo {
 		background-color: black;
 		color: white;
+	}
+
+	@media (max-width: 768px) {
+		.card {
+			width: 100%;
+			border-width: 0.5rem;
+		}
+
+		.card-header {
+			height: 2rem;
+			padding-bottom: 0.5rem;
+		}
+
+		.card-id {
+			height: 1.5rem;
+			width: 1.5rem;
+			font-size: 0.75rem;
+		}
+		
+		.card-numbers {
+			gap: 0.25rem;
+		}
+
+		.box {
+			width: auto;
+			height: 2rem;
+			font-size: 1rem;
+		}
 	}
 </style>
