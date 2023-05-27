@@ -1,68 +1,79 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
+	import type { TGameSession } from '$lib/types';
 	import { io } from 'socket.io-client';
 
-	const socket = io('http://localhost:3000');
+	const socket = io('http://192.168.1.35:3000');
 
-	let currentNumber = 0;
+	let gameStatus: TGameSession = 'idle';
 
-	let gameStarted = false;
+	let currentNumber: number;
 
-	let gameFinished = false;
+	let gameCounter = 0;
 
 	let electedNumbers: number[] = [];
 
-	socket.on('startgame', () => {
-		gameStarted = true;
+	socket.on('game:started', () => {
+		gameStatus = 'playing';
 	});
 
-	socket.on('nextnumber', (msg) => {
+	socket.on('game:draw', (msg) => {
+		gameCounter++;
 		currentNumber = msg;
 		electedNumbers.unshift(msg);
 		electedNumbers = [...electedNumbers];
 	});
 
-	socket.on('endgame', () => {
-		gameFinished = true;
-		gameStarted = false;
+	socket.on('game:ended', () => {
+		gameStatus = 'gameover';
+	});
+
+	socket.on('game:restarted', () => {
+		gameStatus = 'idle';
+		gameCounter = 0;
 		electedNumbers = [];
 	});
 
-	let nonDrawable = true;
-
-	let gameInterval: ReturnType<typeof setInterval>;
-
 	function startGame() {
-		socket.emit('startgame');
+		socket.emit('game:start');
 	}
 
 	function finishGame() {
-		clearInterval(gameInterval);
-		electedNumbers = [];
-		gameStarted = false;
-		gameFinished = true;
+		socket.emit('game:end');
+	}
+
+	function restartGame() {
+		socket.emit('game:restart');
 	}
 </script>
 
 <main class="app">
 	<h1>Tombala</h1>
 
+	<h2>{gameCounter}</h2>
+
 	<Card {electedNumbers} />
 
-	{#if !gameStarted}
+	{#if gameStatus === 'idle'}
 		<button on:click={startGame}>oyunu baslat</button>
-	{:else}
-		<h1>{currentNumber}</h1>
+	{/if}
+
+	{#if gameStatus === 'playing'}
+		<button on:click={finishGame}>oyunu bitir</button>
+		{#if currentNumber}
+			<h1>{currentNumber}</h1>
+		{/if}
 
 		{#if electedNumbers.length > 1}
 			<h2>{electedNumbers[1]}</h2>
 		{/if}
-
-		<button on:click={finishGame}>oyunu bitir</button>
 	{/if}
 
-	{#if gameFinished}
+	{#if gameStatus === 'gameover'}
 		<div>oyun bitti</div>
+		<div>
+			<button on:click={restartGame}>oyunu sifirla</button>
+		</div>
 	{/if}
 </main>
 
