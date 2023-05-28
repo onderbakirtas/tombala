@@ -5,6 +5,8 @@
 
 	const dispatch = createEventDispatcher();
 
+  export let title = 'Modal Title';
+
 	let size = 'sm';
 
 	const hideModal = () => {
@@ -13,22 +15,21 @@
 	};
 </script>
 
-<div
-	class="modal-overlay"
-	on:click|self={hideModal}
-	on:keydown={hideModal}
-	transition:fade={{ duration: 100 }}
->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<div class="modal-overlay" on:click|self={hideModal} transition:fade={{ duration: 100 }}>
 	<div class={`modal modal-${size}`}>
 		<div class="modal-header">
-			<span class="modal-header__title">Oyun Bitti</span>
-			<span class="modal-close" on:click={hideModal} on:keypress={hideModal}>×</span>
+			<span class="modal-header__title">{title}</span>
+			<!-- svelte-ignore a11y-click-events-have-key-events -->
+			<span class="modal-close" on:click={hideModal}>×</span>
 		</div>
 		<div class="modal-content">
 			<slot />
 		</div>
 		<footer class="modal-footer">
-			<button class="btn btn-primary" on:click={hideModal}>Tamam</button>
+			<slot name="footer">
+				<button class="btn btn-primary" on:click={hideModal}>Tamam</button>
+			</slot>
 		</footer>
 	</div>
 </div>

@@ -4,6 +4,7 @@
 	import { gameOutcome, modalVisible } from '$lib/store';
 	import type { TGameSession } from '$lib/types';
 	import { io } from 'socket.io-client';
+	import { onMount } from 'svelte';
 
 	const socket = io('http://192.168.1.35:3000');
 
@@ -16,6 +17,16 @@
 	let gameCompleted = false;
 
 	let electedNumbers: number[] = [];
+
+	let name = '';
+
+	let currentPlayer = '';
+
+	let winnerPlayer = '';
+
+	let playerSetup = true;
+
+	let players: string[] = [];
 
 	socket.on('game:started', () => {
 		gameStatus = 'playing';
@@ -40,9 +51,16 @@
 		$gameOutcome = 'unknown';
 	});
 
-	socket.on('game:finished', () => {
+	socket.on('game:finished', (msg) => {
 		gameCompleted = true;
+		winnerPlayer = msg;
 		endGame();
+	});
+
+	socket.on('player:joined', (msg) => {
+		players.push(msg);
+		players = [...players];
+		name = '';
 	});
 
 	function startGame() {
@@ -58,7 +76,14 @@
 	}
 
 	function finishGame() {
-		socket.emit('game:finish');
+		socket.emit('game:finish', currentPlayer);
+	}
+
+	function handlePayerSetup() {
+		currentPlayer = name;
+		socket.emit('player:join', name);
+		playerSetup = false;
+		$modalVisible = false;
 	}
 
 	$: {
@@ -70,10 +95,16 @@
 			$modalVisible = true;
 		}
 	}
+
+	onMount(() => {
+		$modalVisible = true;
+	});
 </script>
 
 <main class="app">
 	<h1>Tombala</h1>
+
+	<h2>{currentPlayer}</h2>
 
 	<Card {electedNumbers} />
 
@@ -98,16 +129,47 @@
 			<button on:click={restartGame}>oyunu sifirla</button>
 		</div>
 	{/if}
+
+	<hr />
+
+	{#if players.length > 0}
+		<h2>oyuncular</h2>
+		<ul>
+			{#each players as player}
+				<li>{player}</li>
+			{/each}
+		</ul>
+	{/if}
 </main>
 
 {#if gameCompleted && $modalVisible}
-	<Modal>
+	<Modal title="Oyun Bitti">
 		{#if $gameOutcome === 'win'}
 			<p>Tebrikler, kazandınız.</p>
 		{/if}
 		{#if $gameOutcome === 'lose'}
 			<p>Maalesef, kaybettiniz.</p>
+			<p>Kazanan oyuncu: <strong>{winnerPlayer}</strong></p>
 		{/if}
+	</Modal>
+{/if}
+
+{#if playerSetup && $modalVisible}
+	<Modal title="Tombala'ya Hosgeldin">
+		<input
+			type="text"
+			bind:value={name}
+			placeholder="isminizi girin"
+			on:keydown={(e) => {
+				if (e.key === 'Enter' && name.length > 0) {
+					handlePayerSetup();
+				}
+			}}
+		/>
+
+		<div slot="footer">
+			<button on:click={handlePayerSetup} disabled={name.length === 0}>tamam</button>
+		</div>
 	</Modal>
 {/if}
 
