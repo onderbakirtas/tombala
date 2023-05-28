@@ -4,7 +4,7 @@
 	import { gameOutcome, modalVisible } from '$lib/store';
 	import type { TGameSession } from '$lib/types';
 	import { io } from 'socket.io-client';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	const socket = io('http://192.168.1.35:3000');
 
@@ -49,6 +49,10 @@
 		electedNumbers = [];
 		gameCompleted = false;
 		$gameOutcome = 'unknown';
+	});
+
+	socket.on("game:connect", (data) => {
+		players = data;
 	});
 
 	socket.on('game:finished', (msg) => {
@@ -98,6 +102,10 @@
 
 	onMount(() => {
 		$modalVisible = true;
+	});
+
+	onDestroy(() => {
+		socket.disconnect();
 	});
 </script>
 
