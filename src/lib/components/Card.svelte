@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { gameOutcome } from '$lib/store';
-	import { bingoChecker, randomCardColor, shuffleArray } from '$lib/utils';
+	import { bingoChecker, shuffleArray } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	export let electedNumbers: number[] = [];
 	export let nonDrawable = true;
+	export let currentPlayer = '';
+	export let cardColor = '#ffbe0b';
 
 	let splittedNumbers: number[][] = [];
 
@@ -17,8 +19,6 @@
 	let bingoNumbers: number[][] = [];
 
 	let finalNumbers: number[] = [];
-
-	let cardColor = '#ffbe0b';
 
 	let optimalNumbers: number[] = [];
 
@@ -81,7 +81,7 @@
 	};
 
 	$: {
-		let result = optimalNumbers.filter((e) => electedNumbers.includes(e)).length === 2;
+		let result = optimalNumbers.filter((e) => electedNumbers.includes(e)).length === 15;
 
 		if (result) {
 			gameOutcome.set('win');
@@ -92,16 +92,13 @@
 
 	onMount(() => {
 		handleBingoNumbers();
-		cardColor = randomCardColor();
 	});
 </script>
 
 {#if !nonDrawable}
-	<p>{JSON.stringify($gameOutcome)}</p>
-
 	<div class="card" style:--card-bg={cardColor}>
 		<header class="card-header">
-			<div>Tombala</div>
+			<div>{currentPlayer}</div>
 			<div class="card-id">1</div>
 		</header>
 		<main class="card-numbers">
@@ -118,11 +115,11 @@
 	.card {
 		display: inline-flex;
 		flex-direction: column;
-		border: 1rem solid var(--card-bg);
+		padding: 1rem;
 		background-color: var(--card-bg);
-		border-radius: 0.5rem;
 		max-width: 40rem;
-		width: 100%;
+		width: 90vw;
+		border-radius: 8px;
 	}
 
 	.card-header {
@@ -155,15 +152,16 @@
 
 	.box {
 		border-radius: 4px;
-		width: 4rem;
 		height: 3rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		text-align: center;
+		flex: 1 1 auto;
 		font-size: 1.5rem;
 		font-weight: 700;
 		background-color: rgba(0, 0, 0, 0.25);
+		user-select: none;
 	}
 
 	.box.filled {
@@ -176,11 +174,6 @@
 	}
 
 	@media (max-width: 768px) {
-		.card {
-			width: 100%;
-			border-width: 0.5rem;
-		}
-
 		.card-header {
 			height: 2rem;
 			padding-bottom: 0.5rem;

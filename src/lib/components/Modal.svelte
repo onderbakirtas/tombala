@@ -5,23 +5,33 @@
 
 	const dispatch = createEventDispatcher();
 
-  export let title = 'Modal Title';
+	export let title = 'Modal Title';
+
+	export let dismissible = true;
 
 	let size = 'sm';
 
 	const hideModal = () => {
+		if (!dismissible) return;
 		$modalVisible = false;
 		dispatch('hide');
 	};
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div class="modal-overlay" on:click|self={hideModal} transition:fade={{ duration: 100 }}>
+<div
+	class="modal-overlay"
+	class:dismissible
+	on:click|self={hideModal}
+	transition:fade={{ duration: 100 }}
+>
 	<div class={`modal modal-${size}`}>
 		<div class="modal-header">
 			<span class="modal-header__title">{title}</span>
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<span class="modal-close" on:click={hideModal}>×</span>
+			{#if dismissible}
+				<span class="modal-close" on:click={hideModal}>×</span>
+			{/if}
 		</div>
 		<div class="modal-content">
 			<slot />
@@ -47,6 +57,7 @@
 
 		&-sm {
 			width: 24rem;
+			max-width: 90%;
 		}
 
 		&-md {
@@ -71,7 +82,11 @@
 			left: 0;
 			width: 100%;
 			height: 100%;
-			cursor: pointer;
+
+			&.dismissible {
+				cursor: pointer;
+				pointer-events: auto;
+			}
 		}
 
 		&-header {
@@ -101,6 +116,7 @@
 		&-footer {
 			padding: 1rem 1.5rem;
 			border-top: 1px solid #ddd;
+			align-items: center;
 		}
 
 		:global(&-buttons) {

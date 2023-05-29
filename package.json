@@ -30,6 +30,8 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"color2k": "^2.0.2",
+		"hex-to-rgba": "^2.0.1",
 		"socket.io-client": "^4.6.1"
 	}
 }

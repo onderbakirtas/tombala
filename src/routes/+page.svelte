@@ -1,14 +1,26 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import Players from '$lib/components/Players.svelte';
 	import { gameOutcome, modalVisible } from '$lib/store';
-	import type { TGameSession } from '$lib/types';
+	import type { TGameSession, TPlayerClient } from '$lib/types';
+	import { randomCardColor } from '$lib/utils';
+	import { darken, opacify } from 'color2k';
+	import hexToRgba from 'hex-to-rgba';
 	import { io } from 'socket.io-client';
 	import { onDestroy, onMount } from 'svelte';
 
-	const socket = io('http://192.168.1.35:3000');
+	const socket = io('http://tombala-server.jik.app');
+
+	let cardColor = '#ffbe0b';
+
+	let bgColor = opacify(cardColor, 0.2);
+
+	let darkColor = darken(cardColor, 0.1);
 
 	let gameStatus: TGameSession = 'idle';
+
+	let playerNameInput: HTMLInputElement;
 
 	let currentNumber: number;
 
@@ -26,7 +38,7 @@
 
 	let playerSetup = true;
 
-	let players: string[] = [];
+	let players: TPlayerClient[] = [];
 
 	socket.on('game:started', () => {
 		gameStatus = 'playing';
@@ -49,9 +61,14 @@
 		electedNumbers = [];
 		gameCompleted = false;
 		$gameOutcome = 'unknown';
+
+
+		cardColor = randomCardColor();
+		bgColor = hexToRgba(cardColor, 0.2);
+		darkColor = darken(cardColor, 0.2);
 	});
 
-	socket.on("game:connect", (data) => {
+	socket.on('game:connect', (data) => {
 		players = data;
 	});
 
@@ -65,6 +82,11 @@
 		players.push(msg);
 		players = [...players];
 		name = '';
+	});
+
+	socket.on('player:disconnected', (msg) => {
+		players = players.filter((p) => p.id !== msg);
+		players = [...players];
 	});
 
 	function startGame() {
@@ -101,52 +123,61 @@
 	}
 
 	onMount(() => {
+		cardColor = randomCardColor();
+		bgColor = hexToRgba(cardColor, 0.2);
+		darkColor = darken(cardColor, 0.2);
 		$modalVisible = true;
+		setTimeout(() => {
+			playerNameInput.focus();
+		}, 100);
 	});
 
 	onDestroy(() => {
-		socket.disconnect();
+		socket.emit('player:leave', currentPlayer);
 	});
 </script>
 
-<main class="app">
+<main
+	class="app"
+	style:--bg-color={bgColor}
+	style:--text-color={cardColor}
+	style:--text-color-dark={darkColor}
+>
 	<h1>Tombala</h1>
 
-	<h2>{currentPlayer}</h2>
+	<Card {electedNumbers} {currentPlayer} {cardColor} />
 
-	<Card {electedNumbers} />
-
-	{#if gameStatus === 'idle'}
-		<button on:click={startGame}>oyunu baslat</button>
-	{/if}
-
-	{#if gameStatus === 'playing'}
-		<button on:click={endGame}>oyunu bitir</button>
-		{#if currentNumber}
-			<h1>{currentNumber}</h1>
+	<div class="action-row">
+		{#if gameStatus === 'idle'}
+			<button class="btn" on:click={startGame}>oyuna başla</button>
 		{/if}
 
-		{#if electedNumbers.length > 1}
-			<h2>{electedNumbers[1]}</h2>
+		{#if gameStatus === 'playing'}
+			<!-- <button on:click={endGame}>oyunu bitir</button> -->
+			<div class="number-list">
+				{#if currentNumber}
+					<div class="number-current">{currentNumber}</div>
+				{/if}
+
+				<div class="number-olds">
+					{#if electedNumbers.length > 0}
+						{#each electedNumbers.slice(0, 10) as number}
+							{#if number !== currentNumber}
+								<div class="number-previous">{number}</div>
+							{/if}
+						{/each}
+					{/if}
+				</div>
+			</div>
 		{/if}
-	{/if}
 
-	{#if gameStatus === 'gameover'}
-		<div>oyun bitti</div>
-		<div>
-			<button on:click={restartGame}>oyunu sifirla</button>
-		</div>
-	{/if}
-
-	<hr />
+		{#if gameStatus === 'gameover'}
+			<button class="btn" on:click={restartGame}>oyunu sifirla</button>
+		{/if}
+	</div>
 
 	{#if players.length > 0}
-		<h2>oyuncular</h2>
-		<ul>
-			{#each players as player}
-				<li>{player}</li>
-			{/each}
-		</ul>
+		<Players {players} />
 	{/if}
 </main>
 
@@ -163,11 +194,12 @@
 {/if}
 
 {#if playerSetup && $modalVisible}
-	<Modal title="Tombala'ya Hosgeldin">
+	<Modal dismissible={false} title="Tombala'ya Hoşgeldin">
 		<input
 			type="text"
+			bind:this={playerNameInput}
 			bind:value={name}
-			placeholder="isminizi girin"
+			placeholder="oyuncu adı"
 			on:keydown={(e) => {
 				if (e.key === 'Enter' && name.length > 0) {
 					handlePayerSetup();
@@ -175,19 +207,87 @@
 			}}
 		/>
 
-		<div slot="footer">
+		<div slot="footer" class="modal-buttons">
 			<button on:click={handlePayerSetup} disabled={name.length === 0}>tamam</button>
 		</div>
 	</Modal>
 {/if}
 
-<style>
+<style lang="scss">
 	.app {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		gap: 1rem;
+		padding: 0 1rem;
+		height: 100vh;
+		position: relative;
+
+		&::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: -1;
+			background: linear-gradient(0deg, var(--bg-color) 0%, var(--bg-color) 100%);
+			background-size: 400% 400%;
+			animation: gradient 15s ease infinite;
+		}
+	}
+
+	.action-row {
+		height: 5rem;
+		display: flex;
+		align-items: center;
+	}
+
+	.number {
+		&-list {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			width: 90vw;
+			max-width: 40rem;
+		}
+
+		&-olds {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		&-current {
+			font-size: 2rem;
+			font-weight: bold;
+			background-color: black;
+			color: white;
+			width: 3.5rem;
+			height: 3.5rem;
+			border-radius: 50%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		&-previous {
+			font-size: 1.125rem;
+			font-weight: bold;
+			background-color: #999;
+			color: white;
+			width: 2.5rem;
+			height: 2.5rem;
+			border-radius: 50%;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+	}
+
+	.modal-buttons {
+		display: flex;
 		justify-content: center;
 		gap: 1rem;
-		padding: 1rem;
 	}
 </style>
