@@ -10,7 +10,7 @@
 	import { io } from 'socket.io-client';
 	import { onDestroy, onMount } from 'svelte';
 
-	const socket = io('http://tombala-server.jik.app');
+	const socket = io('https://tombala-server.jik.app');
 
 	let cardColor = '#ffbe0b';
 
