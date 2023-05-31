@@ -144,7 +144,7 @@
 >
 	<h1>Tombala</h1>
 
-	<a href="/oda-adi">odaya git</a>
+	<!-- <a href="/oda-adi">odaya git</a> -->
 
 	{#key cardColor}
 		<Card {electedNumbers} {currentPlayer} {cardColor} />
