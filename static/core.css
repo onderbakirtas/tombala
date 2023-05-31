@@ -3,6 +3,7 @@ body {
 	background-image: url('./bg2.jpg');
 	background-size: 300px auto;
 	background-repeat: repeat;
+	background-attachment: fixed;
 	font-family: 'Play', sans-serif;
 	min-height: 100vh;
 }

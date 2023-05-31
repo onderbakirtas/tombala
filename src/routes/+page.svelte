@@ -1,16 +1,16 @@
 <script lang="ts">
+	import { PUBLIC_SOCKET_URL } from '$env/static/public';
 	import Card from '$lib/components/Card.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Players from '$lib/components/Players.svelte';
 	import { gameOutcome, modalVisible } from '$lib/store';
 	import type { TGameSession, TPlayerClient } from '$lib/types';
 	import { randomCardColor } from '$lib/utils';
-	import { darken, opacify } from 'color2k';
-	import hexToRgba from 'hex-to-rgba';
+	import { darken, opacify, transparentize } from 'color2k';
 	import { io } from 'socket.io-client';
 	import { onDestroy, onMount } from 'svelte';
 
-	const socket = io('https://tombala-server.jik.app');
+	const socket = io(PUBLIC_SOCKET_URL);
 
 	let cardColor = '#ffbe0b';
 
@@ -62,9 +62,8 @@
 		gameCompleted = false;
 		$gameOutcome = 'unknown';
 
-
 		cardColor = randomCardColor();
-		bgColor = hexToRgba(cardColor, 0.2);
+		bgColor = transparentize(cardColor, 0.75);
 		darkColor = darken(cardColor, 0.2);
 	});
 
@@ -124,7 +123,7 @@
 
 	onMount(() => {
 		cardColor = randomCardColor();
-		bgColor = hexToRgba(cardColor, 0.2);
+		bgColor = transparentize(cardColor, 0.75);
 		darkColor = darken(cardColor, 0.2);
 		$modalVisible = true;
 		setTimeout(() => {
@@ -145,7 +144,11 @@
 >
 	<h1>Tombala</h1>
 
-	<Card {electedNumbers} {currentPlayer} {cardColor} />
+	<a href="/oda-adi">odaya git</a>
+
+	{#key cardColor}
+		<Card {electedNumbers} {currentPlayer} {cardColor} />
+	{/key}
 
 	<div class="action-row">
 		{#if gameStatus === 'idle'}
@@ -233,6 +236,7 @@
 			z-index: -1;
 			background: linear-gradient(0deg, var(--bg-color) 0%, var(--bg-color) 100%);
 			background-size: 400% 400%;
+			background-attachment: fixed;
 			animation: gradient 15s ease infinite;
 		}
 	}
