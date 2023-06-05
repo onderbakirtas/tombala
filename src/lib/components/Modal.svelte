@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { modalVisible } from '$lib/store';
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
@@ -11,12 +11,20 @@
 
 	let size = 'sm';
 
+	const handleKeydown = (e: KeyboardEvent) => {
+		if (e.key === 'Escape') {
+			hideModal();
+		}
+	};
+
 	const hideModal = () => {
 		if (!dismissible) return;
 		$modalVisible = false;
 		dispatch('hide');
 	};
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
@@ -26,13 +34,7 @@
 	transition:fade={{ duration: 100 }}
 >
 	<div class={`modal modal-${size}`}>
-		<div class="modal-header">
-			<span class="modal-header__title">{title}</span>
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			{#if dismissible}
-				<span class="modal-close" on:click={hideModal}>×</span>
-			{/if}
-		</div>
+		<div class="modal-header">{title}</div>
 		<div class="modal-content">
 			<slot />
 		</div>
@@ -54,6 +56,7 @@
 		position: relative;
 		box-shadow: 0 4px 24px rgba($color: #000000, $alpha: 0.3);
 		overflow: hidden;
+		text-align: center;
 
 		&-sm {
 			width: 24rem;
@@ -90,20 +93,14 @@
 		}
 
 		&-header {
-			padding: 0 4rem 0 1.5rem;
-			text-align: left;
+			padding: 1rem 1.5rem;
 			font-weight: 700;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			background: #fafafa;
+			background: #eee;
 			min-height: 3.5rem;
 			border-bottom: 1px solid #ddd;
 			color: #333;
-
-			&__title {
-				font-size: 1.125rem;
-			}
+			font-size: 1.125rem;
+			line-height: 1.5;
 		}
 
 		&-content {
@@ -125,7 +122,6 @@
 		}
 
 		&-close {
-			background: #eee;
 			color: #888;
 			display: inline-flex;
 			align-items: flex-end;

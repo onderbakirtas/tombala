@@ -1,4 +1,4 @@
-<button class="button"><span>oda oluştur</span></button>
+<button class="button" on:click><span>oda oluştur</span></button>
 
 <style lang="scss">
 	%test {

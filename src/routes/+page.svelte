@@ -1,12 +1,18 @@
 <script>
-	import CreateButton from "$lib/components/CreateButton.svelte";
-
+	import CreateButton from '$lib/components/CreateButton.svelte';
+	import CreateRoomModal from '$lib/components/CreateRoomModal.svelte';
+	import { modalVisible } from '$lib/store';
 </script>
+
 <div class="intro">
 	<h1>TOMBALA</h1>
 	<p>Arkadaşlarınla oynamaya başla.</p>
-	<CreateButton />
+	<CreateButton on:click={() => ($modalVisible = true)} />
 </div>
+
+{#if $modalVisible}
+	<CreateRoomModal />
+{/if}
 
 <style lang="scss">
 	.intro {

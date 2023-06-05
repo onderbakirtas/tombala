@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { gameOutcome } from '$lib/store';
+	import type { TPlayerClient } from '$lib/types';
 	import { bingoChecker, shuffleArray } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	export let electedNumbers: number[] = [];
 	export let nonDrawable = true;
-	export let currentPlayer = '';
+	export let currentPlayer: TPlayerClient;
 	export let cardColor = '#ffbe0b';
 
 	let splittedNumbers: number[][] = [];
@@ -98,8 +99,8 @@
 {#if !nonDrawable}
 	<div class="card" style:--card-bg={cardColor}>
 		<header class="card-header">
-			<div>{currentPlayer}</div>
-			<div class="card-id">1</div>
+			<div>{currentPlayer.name}</div>
+			<div class="card-id">{currentPlayer.id}</div>
 		</header>
 		<main class="card-numbers">
 			{#each finalNumbers as item}
@@ -134,7 +135,7 @@
 
 	.card-id {
 		height: 2rem;
-		width: 2rem;
+		padding: 0 1rem;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;

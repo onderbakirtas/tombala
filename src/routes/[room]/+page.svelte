@@ -3,12 +3,12 @@
 	import Card from '$lib/components/Card.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Players from '$lib/components/Players.svelte';
-	import { gameOutcome, modalVisible, socket } from '$lib/store';
-	import type { TGameSession, TPlayerClient } from '$lib/types';
+	import { socket } from '$lib/socket';
+	import { gameOutcome, modalVisible } from '$lib/store';
+	import type { TGameSession, TPlayerClient, TSocketResponseData } from '$lib/types';
 	import { onDestroy, onMount } from 'svelte';
 
 	let { room } = $page.params;
-
 
 	let gameStatus: TGameSession = 'idle';
 
@@ -24,7 +24,7 @@
 
 	let name = '';
 
-	let currentPlayer = '';
+	let currentPlayer: TPlayerClient;
 
 	let winnerPlayer = '';
 
@@ -32,69 +32,69 @@
 
 	let players: TPlayerClient[] = [];
 
-	$socket.on('game:started', () => {
-		gameStatus = 'playing';
-	});
+	// socket.on('game:started', () => {
+	// 	gameStatus = 'playing';
+	// });
 
-	$socket.on('game:draw', (msg) => {
-		gameCounter++;
-		currentNumber = msg;
-		electedNumbers.unshift(msg);
-		electedNumbers = [...electedNumbers];
-	});
+	// socket.on('game:draw', (msg) => {
+	// 	gameCounter++;
+	// 	currentNumber = msg;
+	// 	electedNumbers.unshift(msg);
+	// 	electedNumbers = [...electedNumbers];
+	// });
 
-	$socket.on('game:ended', () => {
-		gameStatus = 'gameover';
-	});
+	// socket.on('game:ended', () => {
+	// 	gameStatus = 'gameover';
+	// });
 
-	$socket.on('game:restarted', () => {
-		gameStatus = 'idle';
-		gameCounter = 0;
-		electedNumbers = [];
-		gameCompleted = false;
-		$gameOutcome = 'unknown';
-	});
+	// socket.on('game:restarted', () => {
+	// 	gameStatus = 'idle';
+	// 	gameCounter = 0;
+	// 	electedNumbers = [];
+	// 	gameCompleted = false;
+	// 	$gameOutcome = 'unknown';
+	// });
 
-	$socket.on('game:connect', (data) => {
-		players = data;
-	});
+	// socket.on('game:connect', (data) => {
+	// 	players = data;
+	// });
 
-	$socket.on('game:finished', (msg) => {
-		gameCompleted = true;
-		winnerPlayer = msg;
-		endGame();
-	});
+	// socket.on('game:finished', (msg) => {
+	// 	gameCompleted = true;
+	// 	winnerPlayer = msg;
+	// 	endGame();
+	// });
 
-	$socket.on('player:joined', (msg) => {
-		players.push(msg);
-		players = [...players];
-		name = '';
-	});
+	// socket.on('player:joined', (msg) => {
+	// 	players.push(msg);
+	// 	players = [...players];
+	// 	name = '';
+	// });
 
-	$socket.on('player:disconnected', (msg) => {
-		players = players.filter((p) => p.id !== msg);
-		players = [...players];
-	});
+	// socket.on('player:disconnected', (msg) => {
+	// 	players = players.filter((p) => p.id !== msg);
+	// 	players = [...players];
+	// });
 
 	function startGame() {
-		$socket.emit('game:start');
+		socket.emit('game:start');
 	}
 
 	function endGame() {
-		$socket.emit('game:end');
+		socket.emit('game:end');
 	}
 
 	function restartGame() {
-		$socket.emit('game:restart');
+		socket.emit('game:restart');
 	}
 
 	function finishGame() {
-		$socket.emit('game:finish', currentPlayer);
+		socket.emit('game:finish', currentPlayer);
 	}
 
 	function handlePayerSetup() {
-		currentPlayer = name;
-		$socket.emit('player:join', name);
+		currentPlayer.name = name;
+		socket.emit('player:join', { currentPlayer, room });
 		playerSetup = false;
 		$modalVisible = false;
 	}
@@ -110,53 +110,62 @@
 	}
 
 	onMount(() => {
-		$modalVisible = true;
-		setTimeout(() => {
-			playerNameInput.focus();
-		}, 100);
+		socket.emit('player:list', room, (response: TSocketResponseData<TPlayerClient[]>) => {
+			console.log(response);
+		});
+
+		socket.on('player:joined', (msg) => {
+			console.log(msg);
+		});
+
+		// $modalVisible = true;
+		// setTimeout(() => {
+		// 	playerNameInput.focus();
+		// }, 100);
 	});
 
 	onDestroy(() => {
-		$socket.emit('player:leave', currentPlayer);
+		socket.emit('player:leave', currentPlayer);
 	});
 </script>
 
-<div>
-	<Card {electedNumbers} {currentPlayer} />
+{#if currentPlayer}
+	<div>
+		<Card {electedNumbers} {currentPlayer} />
 
-	<div class="action-row">
-		{#if gameStatus === 'idle'}
-			<button class="btn" on:click={startGame}>oyuna başla</button>
-		{/if}
+		<div class="action-row">
+			{#if gameStatus === 'idle' && currentPlayer.admin}
+				<button class="btn" on:click={startGame}>oyuna başla</button>
+			{/if}
 
-		{#if gameStatus === 'playing'}
-			<!-- <button on:click={endGame}>oyunu bitir</button> -->
-			<div class="number-list">
-				{#if currentNumber}
-					<div class="number-current">{currentNumber}</div>
-				{/if}
-
-				<div class="number-olds">
-					{#if electedNumbers.length > 0}
-						{#each electedNumbers.slice(0, 10) as number}
-							{#if number !== currentNumber}
-								<div class="number-previous">{number}</div>
-							{/if}
-						{/each}
+			{#if gameStatus === 'playing'}
+				<div class="number-list">
+					{#if currentNumber}
+						<div class="number-current">{currentNumber}</div>
 					{/if}
-				</div>
-			</div>
-		{/if}
 
-		{#if gameStatus === 'gameover'}
-			<button class="btn" on:click={restartGame}>oyunu sifirla</button>
+					<div class="number-olds">
+						{#if electedNumbers.length > 0}
+							{#each electedNumbers.slice(0, 10) as number}
+								{#if number !== currentNumber}
+									<div class="number-previous">{number}</div>
+								{/if}
+							{/each}
+						{/if}
+					</div>
+				</div>
+			{/if}
+
+			{#if gameStatus === 'gameover' && currentPlayer.admin}
+				<button class="btn" on:click={restartGame}>oyunu sifirla</button>
+			{/if}
+		</div>
+
+		{#if players.length > 0}
+			<Players {players} />
 		{/if}
 	</div>
-
-	{#if players.length > 0}
-		<Players {players} />
-	{/if}
-</div>
+{/if}
 
 {#if gameCompleted && $modalVisible}
 	<Modal title="Oyun Bitti">
